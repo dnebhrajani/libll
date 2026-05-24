@@ -27,43 +27,40 @@
 typedef enum {
     LL_NOTE,
     LL_WARNING,
+    LL_ERROR,
     LL_FATAL
 } ll_error_level;
 
 typedef struct {
-    const char* code;
-    const char* message;
+  const char* code;
+  const char* message;
+  const char  severity;
 } ll_error;
 
-static const ll_error LL_ERR_SELF_APPEND = {
-    "L01",
-    "Cannot append list to itself."
-};
-
 static const ll_error LL_ERR_NULL_DATA = {
-    "L02",
-    "NULL data pointer provided."
+  "L02",
+  "Invalid null data pointer."
 };
 
 static const ll_error LL_ERR_NULL_COMPARE = {
-    "L03",
-    "NULL compare function provided."
+  "L03",
+  "Invalid null compare function."
 };
 
 static const ll_error LL_ERR_NULL_PRINTER = {
-    "L04",
-    "NULL printer function provided."
+  "L04",
+  "Invalid null print function."
 };
 
 static const ll_error LL_ERR_ALLOC = {
-    "M01",
-    "Unable to allocate memory."
+  "M01",
+  "Unable to allocate memory."
 };
 
 
-void _printerror(const ll_error* err,
-                  ll_error_level level,
-                  const char* func) {
+void _printerr(const ll_error* err,
+               ll_error_level level,
+               const char* func) {
 
   const char* severity;
   switch(level) {
@@ -116,13 +113,13 @@ void _printerror(const ll_error* err,
 
 ll* lladd(ll* list, void* d) {
   if (!d) {
-    _printerror(&LL_ERR_NULL_DATA, LL_WARNING, "lladd");
+    _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "lladd");
     return list;
   }
   ll* i;
   ll* new = (ll*)malloc(sizeof(ll));
   if (!new) {
-    _printerror(&LL_ERR_ALLOC, LL_FATAL, "lladd");
+    _printerr(&LL_ERR_ALLOC, LL_FATAL, "lladd");
     exit(1);
   }
   new->data = d;
@@ -167,7 +164,7 @@ ll* lladd(ll* list, void* d) {
 
 int llprint(ll* list, void (*printer)(void*)) {
   if (!printer) {
-    _printerror(&LL_ERR_NULL_PRINTER, LL_FATAL, "llprint");
+    _printerr(&LL_ERR_NULL_PRINTER, LL_FATAL, "llprint");
     exit(2);
   }
   if (list) {
@@ -213,11 +210,11 @@ int llprint(ll* list, void (*printer)(void*)) {
 
 ll* llsearch(ll* list, void* d, int (*compare)(void*, void*)) { 
   if (!compare) {
-    _printerror(&LL_ERR_NULL_COMPARE, LL_FATAL, "llsearch");
+    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llsearch");
     exit(2);
   }
   if (!d) {
-    _printerror(&LL_ERR_NULL_DATA, LL_WARNING, "llsearch");
+    _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "llsearch");
     return NULL;
   }
   ll* i;
@@ -261,11 +258,11 @@ ll* llsearch(ll* list, void* d, int (*compare)(void*, void*)) {
 
 ll* lldelete(ll* list, void* d, int (*compare)(void*, void*), void (*destroy)(void*)) {
   if (!compare) {
-    _printerror(&LL_ERR_NULL_COMPARE, LL_FATAL, "lldelete");
+    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "lldelete");
     exit(2);
   }
   if (!d) {
-    _printerror(&LL_ERR_NULL_DATA, LL_WARNING, "lldelete");
+    _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "lldelete");
     return list;
   }
   ll* curr;
@@ -321,10 +318,15 @@ ll* lldelete(ll* list, void* d, int (*compare)(void*, void*), void (*destroy)(vo
 //--------------------------------------------------------------------------------
 
 ll* llappend(ll* list1, ll* list2) {
+  static const ll_error LL_ERR_SELF_APPEND = {
+    "L01",
+    "Cannot append list to itself."
+  };
+
   if (!list1) return list2;
   if (!list2) return list1;
   if (list1 == list2) {
-    _printerror(&LL_ERR_SELF_APPEND, LL_WARNING, "llappend");
+    _printerr(&LL_ERR_SELF_APPEND, LL_WARNING, "llappend");
     return list1;
   }
   ll* curr;
@@ -366,11 +368,11 @@ ll* llappend(ll* list1, ll* list2) {
 
 ll* llsplit(ll* list, void* d, int (*compare)(void*, void*)) {
   if (!compare) {
-    _printerror(&LL_ERR_NULL_COMPARE, LL_FATAL, "llsplit");
+    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llsplit");
     exit(2);
   }
   if (!d) {
-    _printerror(&LL_ERR_NULL_DATA, LL_WARNING, "llsplit");
+    _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "llsplit");
     return list;
   }
   ll* curr;
@@ -422,11 +424,11 @@ ll* llsplit(ll* list, void* d, int (*compare)(void*, void*)) {
 
 ll* llinsert(ll* list, void* val, void* d, int (*compare)(void*, void*)) {
   if (!compare) {
-    _printerror(&LL_ERR_NULL_COMPARE, LL_FATAL, "llinsert");
+    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llinsert");
     exit(2);
   }
   if (!val || !d) {
-    _printerror(&LL_ERR_NULL_DATA, LL_WARNING, "llinsert");
+    _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "llinsert");
     return list;
   }
   ll* curr;
@@ -434,7 +436,7 @@ ll* llinsert(ll* list, void* val, void* d, int (*compare)(void*, void*)) {
     if (compare(curr->data, val) == 0) {
       ll* new = (ll*)malloc(sizeof(ll));
       if (!new) {
-        _printerror(&LL_ERR_ALLOC, LL_FATAL, "llinsert");
+        _printerr(&LL_ERR_ALLOC, LL_FATAL, "llinsert");
         exit(1);
       }
       new->data = d;
@@ -542,7 +544,7 @@ static ll* _find_middle(ll* list) {
 
 ll* llmergesort(ll* list, int (*compare)(void*, void*)) {
   if (!compare) {
-    _printerror(&LL_ERR_NULL_COMPARE, LL_FATAL, "llmergesort");
+    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llmergesort");
     exit(2);
   }
   if (!list || !list->next) return list;
@@ -634,7 +636,7 @@ static ll* _join_lists(ll* lesser, ll* equal, ll* greater) {
 
 ll* llquicksort(ll* list, int (*compare)(void*, void*)) {
   if (!compare) {
-    _printerror(&LL_ERR_NULL_COMPARE, LL_FATAL, "llquicksort");
+    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llquicksort");
     exit(2);
   }
   if (!list || !list->next) {
@@ -646,6 +648,7 @@ ll* llquicksort(ll* list, int (*compare)(void*, void*)) {
   ll* equal_iter = NULL;
   ll* greater_iter = NULL;
   ll* lesser = NULL;
+
   ll* equal = NULL;
   ll* greater = NULL;
   ll* curr;
@@ -736,7 +739,9 @@ static ll* _part(ll* list, ll* tail, int (*compare)(void*, void*)) {
       i = i->next;
     }
   }
-  _swap(&i->data, &tail->data);
+  if (i != tail) {
+    _swap(&i->data, &tail->data); 
+  }
   return i;  
 }
 
@@ -802,7 +807,7 @@ static void _qsort(ll* list, ll* tail, int (*compare)(void*, void*)) {
 
 ll* llqsort(ll* list, int (*compare)(void*, void*)) {
   if (!compare) {
-    _printerror(&LL_ERR_NULL_COMPARE, LL_FATAL, "llqsort");
+    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llqsort");
     exit(2);
   }
   if (!list || !list->next) {

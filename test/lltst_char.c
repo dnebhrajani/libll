@@ -1,4 +1,19 @@
+//--------------------------------------------------------------------------------
+// Module: libll
+// File: lltst.c
+// Author: Durga V. Nebhrajani
+// Description:
+//      Test for a generic linked list library that allows
+//      user-specific datatype for payload.
+// Copyright:
+//      Copyright (c) 2026 Durga V. Nebhrajani
+//      All rights reserved.
+//--------------------------------------------------------------------------------
+
+
 #include "libll.h"
+
+// User defined print functions
 
 void printInt(void* data) {
   printf("%d ", *(int*)data);
@@ -16,6 +31,7 @@ void printString(void* data) {
   printf("%s ", (char*)data);
 }
 
+// User defined compare functions
   
 int compareInt(void* a, void* b) {
   if (*(int*)a == *(int*)b) return 0;
@@ -57,48 +73,48 @@ int main(void) {
   llprint(myLL, printString);
   
   
-  /* char* st = "phew"; // search term */
-  /* char* st1 = "i'm"; // search term */
-  /* char* st2 = "so"; // search term */
+  char* st = "phew"; // search term
+  char* st1 = "i'm"; // search term
+  char* st2 = "so"; // search term
   
-  /* ll* found = llsearch(myLL, st, compareString); */
-  /* if (found) { */
-  /*   printString(found->data); */
-  /*   printf("\n"); */
-  /* } */
-  /* else { */
-  /*   printf("Node %s not found.\n", st); */
-  /* } */
+  ll* found = llsearch(myLL, st, compareString);
+  if (found) {
+    printString(found->data);
+    printf("\n");
+  }
+  else {
+    printf("Node %s not found.\n", st);
+  }
 
-  /* myLL = lldelete(myLL, st, compareString); */
-/*   //llprint(myLL, printString); */
+  myLL = lldelete(myLL, st, compareString);
+  //llprint(myLL, printString);
 
-/*   ll* myLL1 = NULL; */
-/*   char* x = "i'm"; */
-/*   char* y = "so"; */
-/*   char* z = "tired"; */
-/*   char* w = "in"; */
-/*   char* v = "life"; */
+  ll* myLL1 = NULL;
+  char* x = "i'm";
+  char* y = "so";
+  char* z = "tired";
+  char* w = "in";
+  char* v = "life";
   
-/*   myLL1 = lladd(myLL1, x); */
-/*   myLL1 = lladd(myLL1, y); */
-/*   myLL1 = lladd(myLL1, z); */
-/*   myLL1 = lladd(myLL1, w); */
-/*   myLL1 = lladd(myLL1, v); */
-/*   llprint(myLL1, printString); */
+  myLL1 = lladd(myLL1, x);
+  myLL1 = lladd(myLL1, y);
+  myLL1 = lladd(myLL1, z);
+  myLL1 = lladd(myLL1, w);
+  myLL1 = lladd(myLL1, v);
+  llprint(myLL1, printString);
 
-/*   myLL = llappend(myLL, myLL1); */
-/*   llprint(myLL, printString); */
+  myLL = llappend(myLL, myLL1);
+  llprint(myLL, printString);
 
-/*   ll* myLL2 = NULL; */
-/*   myLL2 = llsplit(myLL, st1, compareString); */
-/*   llprint(myLL, printString); */
-/*   llprint(myLL2, printString); */
+  ll* myLL2 = NULL;
+  myLL2 = llsplit(myLL, st1, compareString);
+  llprint(myLL, printString);
+  llprint(myLL2, printString);
 
-/*   char* u = "very"; */
+  char* u = "very";
 
-/*   myLL2 = llinsert(myLL2, st2, u, compareString); */
-/*   llprint(myLL2, printString); */
+  myLL2 = llinsert(myLL2, st2, u, compareString);
+  llprint(myLL2, printString);
 
   ll* myLL1 = NULL;
   int x = 16;

@@ -30,6 +30,10 @@ typedef struct ll_t {
   struct ll_t* next;
 } ll;
 
+//--------------------------------------------------------------------------------
+// Member functions of the library
+//--------------------------------------------------------------------------------
+
 extern ll* lladd(ll*, void*);
 
 extern ll* llinsert(ll*, void*, void*, int (*)(void*, void*));

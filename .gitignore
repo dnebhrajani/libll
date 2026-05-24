@@ -1,0 +1,3 @@
+build/lltst
+build/*.o
+build/*~
