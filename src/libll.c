@@ -3,8 +3,8 @@
 // File: libll.c
 // Author: Durga V. Nebhrajani
 // Description:
-//      Implementation file for a generic linked list library that allows user-specific
-//       datatype for payload.
+//      Implementation file for a generic linked list library that allows
+//      user-specific datatype for payload.
 // Copyright:
 //      Copyright (c) 2026 Durga V. Nebhrajani
 //      All rights reserved.
@@ -32,8 +32,8 @@ typedef enum {
 } ll_error_level;
 
 typedef struct {
-  const char* code;
-  const char* message;
+  const char *code;
+  const char *message;
   const char  severity;
 } ll_error;
 
@@ -58,11 +58,11 @@ static const ll_error LL_ERR_ALLOC = {
 };
 
 
-void _printerr(const ll_error* err,
+void _printerr(const ll_error *err,
                ll_error_level level,
-               const char* func) {
+               const char *func) {
 
-  const char* severity;
+  const char *severity;
   switch(level) {
   case LL_NOTE:
     severity = "NOTE";
@@ -82,6 +82,27 @@ void _printerr(const ll_error* err,
           err->code,
           func,
           err->message);
+}
+
+
+//--------------------------------------------------------------------------------
+// Internal Function: _swap
+//
+// Description:
+//      Swaps two payload pointers.
+//
+// Parameters:
+//      a:   Pointer to first payload pointer.
+//      b:   Pointer to second payload pointer.
+//
+// Returns:
+//      None.
+//--------------------------------------------------------------------------------
+
+static void _swap(void **a, void **b) {
+  void *temp = *a;
+  *a = *b;
+  *b = temp;
 }
 
 //--------------------------------------------------------------------------------
@@ -111,13 +132,13 @@ void _printerr(const ll_error* err,
 //      list = lladd(list, &x);
 //--------------------------------------------------------------------------------
 
-ll* lladd(ll* list, void* d) {
+ll *lladd(ll *list, void *d) {
   if (!d) {
     _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "lladd");
     return list;
   }
-  ll* i;
-  ll* new = (ll*)malloc(sizeof(ll));
+  ll *i;
+  ll *new = (ll *)malloc(sizeof(ll));
   if (!new) {
     _printerr(&LL_ERR_ALLOC, LL_FATAL, "lladd");
     exit(1);
@@ -162,19 +183,18 @@ ll* lladd(ll* list, void* d) {
 //--------------------------------------------------------------------------------
 
 
-int llprint(ll* list, void (*printer)(void*)) {
+int llprint(ll *list, void (*printer)(void *)) {
   if (!printer) {
     _printerr(&LL_ERR_NULL_PRINTER, LL_FATAL, "llprint");
     exit(2);
   }
   if (list) {
-    for (ll* i = list; i != NULL; i = i->next) {
+    for (ll *i = list; i != NULL; i = i->next) {
       if (!i->data) {
         continue;
       }
       printer(i->data);
     }
-    printf("\n");
     return 0; 
   }
   return -1;
@@ -205,10 +225,10 @@ int llprint(ll* list, void (*printer)(void*)) {
 //
 // Usage Example:
 //      int target = 25;
-//      ll* result = llsearch(list, &target, compareInt);
+//      ll *result = llsearch(list, &target, compareInt);
 //--------------------------------------------------------------------------------
 
-ll* llsearch(ll* list, void* d, int (*compare)(void*, void*)) { 
+ll *llsearch(ll *list, void *d, int (*compare)(void *, void *)) { 
   if (!compare) {
     _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llsearch");
     exit(2);
@@ -217,7 +237,7 @@ ll* llsearch(ll* list, void* d, int (*compare)(void*, void*)) {
     _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "llsearch");
     return NULL;
   }
-  ll* i;
+  ll *i;
   for (i = list; i != NULL; i = i->next) {
     if (compare(i->data, d) == 0) {
       return i;
@@ -256,7 +276,8 @@ ll* llsearch(ll* list, void* d, int (*compare)(void*, void*)) {
 //      list = lldelete(list, &target, compareInt);
 //--------------------------------------------------------------------------------
 
-ll* lldelete(ll* list, void* d, int (*compare)(void*, void*), void (*destroy)(void*)) {
+ll *lldelete(ll *list, void *d, int (*compare)(void *, void *),
+                                void (*destroy)(void *)) {
   if (!compare) {
     _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "lldelete");
     exit(2);
@@ -265,32 +286,189 @@ ll* lldelete(ll* list, void* d, int (*compare)(void*, void*), void (*destroy)(vo
     _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "lldelete");
     return list;
   }
-  ll* curr;
-  ll* prev = NULL;
-  for (curr = list; curr != NULL; curr = curr->next) {
+  if (!list) {
+    return NULL;
+  }
+  // Head matches
+  if (compare(list->data, d) == 0) {
+    // Single-node list
+    if (list->next == NULL) {
+      if (destroy) {
+        destroy(list->data);
+      }
+      free(list);
+      return NULL;
+    }
+    ll *temp = list->next;
+    list->data = temp->data;
+    list->next = temp->next;
+    free(temp);
+    return list;
+  }
+  ll *curr;
+  ll *prev = list;
+  for (curr = list->next; curr != NULL; curr = curr->next) {
     if (compare(curr->data, d) == 0) {
-      if (curr == list) {
-        list = curr->next;
-        curr->next = NULL;
-        if (destroy) {
-          destroy(curr->data);
-        }
-        free(curr);
-        return list;
+      prev->next = curr->next;
+      if (destroy) {
+        destroy(curr->data);
       }
-      else {
-        prev->next = curr->next;
-        curr->next = NULL;
-        if (destroy) {
-          destroy(curr->data);
-        }
-        free(curr);
-        return list;
-      }
+      free(curr);
+      return list;
     }
     prev = curr;
   }
   return list;
+}
+
+//--------------------------------------------------------------------------------
+// Function: llinsert
+//
+// Description:
+//      Inserts a new node immediately after the first node whose payload
+//      matches the provided target value if before_head flag is not set.
+//      If the flag is set, inserts value before the head. If value is not
+//      found, inserts at the end of the list. If null list is provided,
+//      returns a new single node list with provided insertion data.
+//
+// Parameters:
+//      list:         Pointer to the head of the linked list.
+//      val:          Pointer to target payload.
+//      d:            Pointer to payload to insert.
+//      compare:      User-defined comparison callback.
+//      before_head:  Boolean flag indicating insertion
+//                    being before head of list 
+//
+// Returns:
+//      Pointer to the head of the updated linked list. 
+//
+// Error Handling:
+//      - Returns original list if payload pointer is NULL.
+//      - Terminates program if compare callback is NULL.
+//      - Terminates program on allocation failure.
+//
+// Time Complexity:
+//      O(n)
+//
+// Usage Example:
+//      int target = 25;
+//      int new_node = 50;
+//      list = llinsert(list, &new_node, &target, compareInt);
+//--------------------------------------------------------------------------------
+
+ll *llinsert(ll *list, void *val, void *d, int (*compare)(void *, void *),
+                                           bool before_head) {
+  if (!compare) {
+    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llinsert");
+    exit(2);
+  }
+  if (!d) {
+    _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "llinsert");
+    return list;
+  }
+  if (!val && !before_head) {
+    _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "llinsert");
+    return list;
+  }
+  if (before_head) {
+    ll *new = (ll *)malloc(sizeof(ll));
+    if (!new) {
+      _printerr(&LL_ERR_ALLOC, LL_FATAL, "llinsert");
+      exit(1);
+    }
+    new->data = list->data;
+    new->next = list->next;
+    list->data = d;
+    list->next = new;
+    return list;
+  }
+  ll *curr;
+  ll *prev = NULL;
+  for (curr = list; curr != NULL; curr = curr->next) {
+    if (compare(curr->data, val) == 0) {
+      ll *new = (ll *)malloc(sizeof(ll));
+      if (!new) {
+        _printerr(&LL_ERR_ALLOC, LL_FATAL, "llinsert");
+        exit(1);
+      }
+      new->data = d;
+      new->next = curr->next;
+      curr->next = new;
+      return list;
+    }
+    prev = curr;
+  }
+  // val not found, append to end
+  ll *new = (ll *)malloc(sizeof(ll));
+  if (!new) {
+    _printerr(&LL_ERR_ALLOC, LL_FATAL, "llinsert");
+    exit(1);
+  }
+  new->data = d;
+  new->next = NULL;
+  if (!prev) {
+    return new;
+  }
+  prev->next = new;
+  return list;
+}
+
+//--------------------------------------------------------------------------------
+// Function: llsplit
+//
+// Description:
+//      Splits the linked list at the first node matching the target
+//      value and returns the head of the second resulting list.
+//
+// Parameters:
+//      list:      Pointer to the head of the linked list.
+//      d:         Pointer to target payload.
+//      compare:   User-defined comparison callback.
+//
+// Returns:
+//      Pointer to the head of the second split list. If value is head, returns
+//      head. If val not found, returns NULL.
+//
+// Error Handling:
+//      - Returns original list if payload pointer is NULL.
+//      - Terminates program if compare callback is NULL.
+//
+// Notes:
+//      - If the target is the first node, the original list is returned.
+//      - The original list structure is modified.
+//
+// Time Complexity:
+//      O(n)
+//
+// Usage Example:
+//      int target = 25;
+//      ll *target_list = llsplit(list, &target, compareInt);
+//--------------------------------------------------------------------------------
+
+ll *llsplit(ll *list, void *d, int (*compare)(void *, void *)) {
+  if (!compare) {
+    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llsplit");
+    exit(2);
+  }
+  if (!d) {
+    _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "llsplit");
+    return list;
+  }
+  ll *curr;
+  ll *prev = NULL;
+  for (curr = list; curr != NULL; curr = curr->next) {
+    if (compare(curr->data, d) == 0) {
+      if (curr == list) {
+        return list;
+      }
+      else {
+        prev->next = NULL;
+        return curr;
+      }
+    }
+    prev = curr;
+  }
+  return NULL;
 }
 
 //--------------------------------------------------------------------------------
@@ -317,7 +495,7 @@ ll* lldelete(ll* list, void* d, int (*compare)(void*, void*), void (*destroy)(vo
 //      list1 = llappend(list1, list2);
 //--------------------------------------------------------------------------------
 
-ll* llappend(ll* list1, ll* list2) {
+ll *llappend(ll *list1, ll *list2) {
   static const ll_error LL_ERR_SELF_APPEND = {
     "L01",
     "Cannot append list to itself."
@@ -329,123 +507,10 @@ ll* llappend(ll* list1, ll* list2) {
     _printerr(&LL_ERR_SELF_APPEND, LL_WARNING, "llappend");
     return list1;
   }
-  ll* curr;
+  ll *curr;
   for (curr = list1; curr->next != NULL; curr = curr->next);
   curr->next = list2;
   return list1;
-}
-
-//--------------------------------------------------------------------------------
-// Function: llsplit
-//
-// Description:
-//      Splits the linked list at the first node matching the target
-//      value and returns the head of the second resulting list.
-//
-// Parameters:
-//      list:      Pointer to the head of the linked list.
-//      d:         Pointer to target payload.
-//      compare:   User-defined comparison callback.
-//
-// Returns:
-//      Pointer to the head of the second split list.
-//
-// Error Handling:
-//      - Returns original list if payload pointer is NULL.
-//      - Terminates program if compare callback is NULL.
-//
-// Notes:
-//      - If the target is the first node, the original list is returned.
-//      - The original list structure is modified.
-//
-// Time Complexity:
-//      O(n)
-//
-// Usage Example:
-//      int target = 25;
-//      ll* target_list = llsplit(list, &target, compareInt);
-//--------------------------------------------------------------------------------
-
-ll* llsplit(ll* list, void* d, int (*compare)(void*, void*)) {
-  if (!compare) {
-    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llsplit");
-    exit(2);
-  }
-  if (!d) {
-    _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "llsplit");
-    return list;
-  }
-  ll* curr;
-  ll* prev = NULL;
-  for (curr = list; curr != NULL; curr = curr->next) {
-    if (compare(curr->data, d) == 0) {
-      if (curr == list) {
-        return list;
-      }
-      else {
-        prev->next = NULL;
-        return curr;
-      }
-    }
-    prev = curr;
-  }
-  return list;
-}
-
-//--------------------------------------------------------------------------------
-// Function: llinsert
-//
-// Description:
-//      Inserts a new node immediately after the first node whose payload
-//      matches the provided target value.
-//
-// Parameters:
-//      list:      Pointer to the head of the linked list.
-//      val:       Pointer to target payload.
-//      d:         Pointer to payload to insert.
-//      compare:   User-defined comparison callback.
-//
-// Returns:
-//      Pointer to the head of the updated linked list.
-//
-// Error Handling:
-//      - Returns original list if payload pointer is NULL.
-//      - Terminates program if compare callback is NULL.
-//      - Terminates program on allocation failure.
-//
-// Time Complexity:
-//      O(n)
-//
-// Usage Example:
-//      int target = 25;
-//      int new_node = 50;
-//      list = llinsert(list, &new_node, &target, compareInt);
-//--------------------------------------------------------------------------------
-
-ll* llinsert(ll* list, void* val, void* d, int (*compare)(void*, void*)) {
-  if (!compare) {
-    _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llinsert");
-    exit(2);
-  }
-  if (!val || !d) {
-    _printerr(&LL_ERR_NULL_DATA, LL_WARNING, "llinsert");
-    return list;
-  }
-  ll* curr;
-  for (curr = list; curr != NULL; curr = curr->next) {
-    if (compare(curr->data, val) == 0) {
-      ll* new = (ll*)malloc(sizeof(ll));
-      if (!new) {
-        _printerr(&LL_ERR_ALLOC, LL_FATAL, "llinsert");
-        exit(1);
-      }
-      new->data = d;
-      new->next = curr->next;
-      curr->next = new;
-      return list;
-    }
-  }
-  return list;
 }
 
 //--------------------------------------------------------------------------------
@@ -464,14 +529,14 @@ ll* llinsert(ll* list, void* val, void* d, int (*compare)(void*, void*)) {
 //      Pointer to merged sorted list.
 //--------------------------------------------------------------------------------
 
-static ll* _merge(ll* left, ll* right, int (*compare)(void*, void*)) {
+static ll *_merge(ll *left, ll *right, int (*compare)(void *, void *)) {
   if (left == NULL) {
     return right;
   }
   if (right == NULL) {
     return left;
   }
-  ll* final = NULL;
+  ll *final = NULL;
   if (compare(left->data, right->data) <= 0) {
     final = left;
     final->next = _merge(left->next, right, compare);
@@ -496,15 +561,15 @@ static ll* _merge(ll* left, ll* right, int (*compare)(void*, void*)) {
 //      Pointer to middle node.
 //--------------------------------------------------------------------------------
 
-static ll* _find_middle(ll* list) {
+static ll *_find_middle(ll *list) {
   int count = 0;
-  ll* curr;
+  ll *curr;
   for (curr = list; curr != NULL; curr = curr->next) {
     count++;
   }
   int n = count/2;
   if (count % 2 == 0) n -= 1;
-  ll* middle = list;
+  ll *middle = list;
   for (int i = 0; i < n; ++i) {
     middle = middle->next;
   }
@@ -542,16 +607,16 @@ static ll* _find_middle(ll* list) {
 //      list = llmergesort(list, compareInt);
 //--------------------------------------------------------------------------------
 
-ll* llmergesort(ll* list, int (*compare)(void*, void*)) {
+ll *llmergesort(ll *list, int (*compare)(void *, void *)) {
   if (!compare) {
     _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llmergesort");
     exit(2);
   }
   if (!list || !list->next) return list;
-  ll* middle = _find_middle(list);
-  ll* right = middle->next;
+  ll *middle = _find_middle(list);
+  ll *right = middle->next;
   middle->next = NULL;
-  ll* left = list;
+  ll *left = list;
   left = llmergesort(left, compare); 
   right = llmergesort(right, compare);
   return _merge(left, right, compare);
@@ -574,9 +639,9 @@ ll* llmergesort(ll* list, int (*compare)(void*, void*)) {
 //      Pointer to combined linked list.
 //--------------------------------------------------------------------------------
 
-static ll* _join_lists(ll* lesser, ll* equal, ll* greater) {
-  ll* head = NULL;
-  ll* curr = NULL;
+static ll *_join_lists(ll *lesser, ll *equal, ll *greater) {
+  ll *head = NULL;
+  ll *curr = NULL;
   // overall head
   if (lesser) {
     head = lesser;
@@ -634,7 +699,7 @@ static ll* _join_lists(ll* lesser, ll* equal, ll* greater) {
 //      list = llquicksort(list, compareInt);
 //--------------------------------------------------------------------------------
 
-ll* llquicksort(ll* list, int (*compare)(void*, void*)) {
+ll *llquicksort(ll *list, int (*compare)(void *, void *)) {
   if (!compare) {
     _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llquicksort");
     exit(2);
@@ -642,17 +707,17 @@ ll* llquicksort(ll* list, int (*compare)(void*, void*)) {
   if (!list || !list->next) {
     return list;
   }
-  void* pivot = list->data; // head of the list is the default pivot
+  void *pivot = list->data; // head of the list is the default pivot
   // break list into lesser, equal, greater
-  ll* lesser_iter = NULL;
-  ll* equal_iter = NULL;
-  ll* greater_iter = NULL;
-  ll* lesser = NULL;
+  ll *lesser_iter = NULL;
+  ll *equal_iter = NULL;
+  ll *greater_iter = NULL;
+  ll *lesser = NULL;
 
-  ll* equal = NULL;
-  ll* greater = NULL;
-  ll* curr;
-  ll* next;
+  ll *equal = NULL;
+  ll *greater = NULL;
+  ll *curr;
+  ll *next;
   for (curr = list; curr != NULL; curr = next) {
     next = curr->next;
     curr->next = NULL;
@@ -687,29 +752,9 @@ ll* llquicksort(ll* list, int (*compare)(void*, void*)) {
       }
     }
   }
-  ll* less = llquicksort(lesser, compare);
-  ll* great = llquicksort(greater, compare);
+  ll *less = llquicksort(lesser, compare);
+  ll *great = llquicksort(greater, compare);
   return _join_lists(less, equal, great);
-}
-
-//--------------------------------------------------------------------------------
-// Internal Function: _swap
-//
-// Description:
-//      Swaps two payload pointers.
-//
-// Parameters:
-//      a:   Pointer to first payload pointer.
-//      b:   Pointer to second payload pointer.
-//
-// Returns:
-//      None.
-//--------------------------------------------------------------------------------
-
-static void _swap(void** a, void** b) {
-  void* temp = *a;
-  *a = *b;
-  *b = temp;
 }
 
 //--------------------------------------------------------------------------------
@@ -728,10 +773,10 @@ static void _swap(void** a, void** b) {
 //      Pointer to pivot node after partitioning.
 //--------------------------------------------------------------------------------
 
-static ll* _part(ll* list, ll* tail, int (*compare)(void*, void*)) {
-  void* pivot = tail->data;
-  ll* i = list;
-  ll* j;
+static ll *_part(ll *list, ll *tail, int (*compare)(void *, void *)) {
+  void *pivot = tail->data;
+  ll *i = list;
+  ll *j;
 
   for (j = list; j != tail; j = j->next) {
     if (compare(j->data, pivot) < 0) {
@@ -739,9 +784,7 @@ static ll* _part(ll* list, ll* tail, int (*compare)(void*, void*)) {
       i = i->next;
     }
   }
-  if (i != tail) {
-    _swap(&i->data, &tail->data); 
-  }
+  _swap(&i->data, &tail->data); 
   return i;  
 }
 
@@ -760,13 +803,13 @@ static ll* _part(ll* list, ll* tail, int (*compare)(void*, void*)) {
 //      None.
 //--------------------------------------------------------------------------------
 
-static void _qsort(ll* list, ll* tail, int (*compare)(void*, void*)) {
+static void _qsort(ll *list, ll *tail, int (*compare)(void *, void *)) {
   if (!list || !tail || list == tail) {
     return;
   }
-  ll* pivot = _part(list, tail, compare);
+  ll *pivot = _part(list, tail, compare);
   if (pivot != list) {
-    ll* curr;
+    ll *curr;
     for (curr = list; curr->next != pivot; curr = curr->next);
     _qsort(list, curr, compare);
   }
@@ -805,7 +848,7 @@ static void _qsort(ll* list, ll* tail, int (*compare)(void*, void*)) {
 //--------------------------------------------------------------------------------
 
 
-ll* llqsort(ll* list, int (*compare)(void*, void*)) {
+ll *llqsort(ll *list, int (*compare)(void *, void *)) {
   if (!compare) {
     _printerr(&LL_ERR_NULL_COMPARE, LL_FATAL, "llqsort");
     exit(2);
@@ -813,7 +856,7 @@ ll* llqsort(ll* list, int (*compare)(void*, void*)) {
   if (!list || !list->next) {
     return list;
   }
-  ll* tail;
+  ll *tail;
   for (tail = list; tail->next != NULL; tail = tail->next);
   _qsort(list, tail, compare);
   return list;
@@ -840,9 +883,9 @@ ll* llqsort(ll* list, int (*compare)(void*, void*)) {
 //      lldestroy(list, free);
 //--------------------------------------------------------------------------------
 
-void lldestroy(ll* list, void (*destroy)(void*)) {
-  ll* curr;
-  ll* next;
+void lldestroy(ll *list, void (*destroy)(void *)) {
+  ll *curr;
+  ll *next;
   for (curr = list; curr != NULL; curr = next) {
     next = curr->next;
     if (destroy) {
@@ -851,4 +894,62 @@ void lldestroy(ll* list, void (*destroy)(void*)) {
     free(curr);
   }
   return;
+}
+
+//--------------------------------------------------------------------------------
+// Function: llgetdata
+//
+// Description:
+//      Returns the payload of the node provided
+//
+// Parameters:
+//      list:      Pointer to the head of the linked list.
+//
+// Returns:
+//      Payload of the provided node.
+//
+// Time Complexity:
+//      O(1)
+//
+// Usage Example:
+//      void *val = llgetdata(list);
+//--------------------------------------------------------------------------------
+
+void *llgetdata(ll *list) {
+  if (list) {
+    return list->data;
+  }
+  else {
+    return NULL;
+  }
+  
+}
+
+//--------------------------------------------------------------------------------
+// Function: llgetnext
+//
+// Description:
+//      Returns the next pointer of the node provided
+//
+// Parameters:
+//      list:      Pointer to the head of the linked list.
+//
+// Returns:
+//      Next pointer of the provided node.
+//
+// Time Complexity:
+//      O(1)
+//
+// Usage Example:
+//      ll *next = llgetnext(list);
+//--------------------------------------------------------------------------------
+
+ll *llgetnext(ll *list) {
+  if (list) {
+    return list->next;
+  }
+  else {
+    return NULL;
+  }
+  
 }

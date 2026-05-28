@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 //--------------------------------------------------------------------------------
 // Structure:   ll
@@ -26,33 +28,36 @@
 //--------------------------------------------------------------------------------
 
 typedef struct ll_t {
-  void* data;
-  struct ll_t* next;
+  void *data;
+  struct ll_t *next;
 } ll;
 
 //--------------------------------------------------------------------------------
 // Member functions of the library
 //--------------------------------------------------------------------------------
 
-extern ll* lladd(ll*, void*);
+extern ll *lladd(ll *, void *);
 
-extern ll* llinsert(ll*, void*, void*, int (*)(void*, void*));
+extern int llprint(ll *, void (*)(void *));
 
-extern int llprint(ll*, void (*)(void*));
+extern ll *llsearch(ll *, void *, int (*)(void *, void *));
 
-extern ll* llsearch(ll*, void*, int (*)(void*, void*));
+extern ll *lldelete(ll *, void *, int (*)(void *, void *), void (*)(void *));
 
-extern ll* lldelete(ll*, void*, int (*)(void*, void*), void (*)(void*));
+extern ll *llinsert(ll *, void *, void *, int (*)(void *, void *), bool);
 
-extern ll* llappend(ll*, ll*);
+extern ll *llsplit(ll *, void *, int (*)(void *, void *));
 
-extern ll* llsplit(ll*, void*, int (*)(void*, void*));
+extern ll *llappend(ll *, ll *);
 
-extern ll* llmergesort(ll*, int (*)(void*, void*));
+extern ll *llmergesort(ll *, int (*)(void *, void *));
 
-extern ll* llquicksort(ll*, int (*)(void*, void*));
+extern ll *llquicksort(ll *, int (*)(void *, void *));
 
-extern ll* llqsort(ll*, int (*)(void*, void*));
+extern ll *llqsort(ll *, int (*)(void *, void *));
 
-extern void lldestroy(ll*, void (*)(void*));
+extern void lldestroy(ll *, void (*)(void *));
 
+extern void *llgetdata(ll *);
+
+extern ll *llgetnext(ll *);
